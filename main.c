@@ -20,7 +20,7 @@ int main(void) {
     char map[9][16];
     char piece = randChar();
     char action = ' ';
-    int xf = 8, yf = 7, x, y, auxX, auxY;
+    int xf = 8, yf = 7, x, y, auxX, auxY, limXRight = 1, limXLeft = -2;
     int mNaN = 0;
     float m, n;
     float mostAprox;
@@ -54,12 +54,27 @@ int main(void) {
                     }
                     else {
                         map[y][x] = '.';
+                        //printf("Inc(%d,%d)\n", x,y);
 
                         while(y > 2) {
                             mostAprox = 1000000;
-                            //printf("R(%d,%d)\n", x,y);
+                            //printf("Inc(%d,%d)\n", x,y);
+
+                            if (yf < 7 && xf > 8) { // infinity points bug
+                                limXRight = 0;
+                            }
+                            else if (yf < 7 && xf < 8){
+                                limXLeft = -1;
+                            }
+                            else {
+                                limXLeft = -2;
+                                limXRight = 1;
+                            }
+
+                            // Storing previous line coordinates;
+
                             // Finding the most approximate point for the non-continuous terminal space:
-                            for (int k = 1; k > -2; --k) {
+                            for (int k = limXRight; k > limXLeft; --k) {
                                 for (int l = -1; l < 1; ++l) {
                                     if (!(k == 0 && l == 0)) {
                                         if (mostAprox > fabs(lineEquationAproxValue(x+k,y+l,m,n))) {
@@ -76,7 +91,7 @@ int main(void) {
                                 }
                             }// k loop brace
 
-                            //printf("C(%d,%d)\n", auxX, auxY);
+                            //printf("OutG(%d,%d)\n", auxX, auxY);
                             //printf("\n");
                             x = auxX;
                             y = auxY;
@@ -103,12 +118,20 @@ int main(void) {
             break;
 
             case 'a':
-                if (map[yf][xf-1] == ' ') {// Respecting limits of the map
-                    --xf;
+                if (yf < 7 && xf > 8) { // right map limit
+                    ++yf;
                 }
-                else if (map[yf][xf-1] != '#') {// piece in the way
-                    --xf;
-                    --yf;
+                else {
+                    if (map[yf][xf-1] == ' ') {// Respecting limits of the map
+                        --xf;
+                    }
+                    else if ((map[yf][xf-1] == '#' || map[yf][xf-1] != '#') && yf > 2) {
+                        --yf;
+
+                        if (map[yf][xf-1] == ' ') { // pieces in the way
+                            --xf;
+                        }
+                    }
                 }
 
                 m = calculatingM(xf,yf);
@@ -118,12 +141,20 @@ int main(void) {
             break;
 
             case 'd':
-                if (map[yf][xf+1] == ' ') {// Respecting limits of the map
-                    ++xf;
+                if (yf < 7 && xf < 8) { // left map limit
+                    ++yf;
                 }
-                else if (map[yf][xf+1] != '#') {// piece in the way
-                    ++xf;
-                    --yf;
+                else {
+                    if (map[yf][xf+1] == ' ') {// Respecting limits of the map
+                        ++xf;
+                    }
+                    else if ((map[yf][xf+1] == '#' || map[yf][xf+1] != '#') && yf > 2) { // for pieces in the way and when the aim reach the map limit (#)
+                        --yf;
+
+                        if (map[yf][xf+1] == ' ') { // pieces
+                            ++xf;
+                        }
+                    }
                 }
 
                 m = calculatingM(xf,yf);
@@ -152,7 +183,7 @@ int mExist(int x, int y) { // Checking if the angular coefficient is equal to ta
 }
 
 float calculatingM(int x, int y) {
-    return ((float)(y - 1)/(float)(x - 8));
+    return ((float)(y - 2)/(float)(x - 8));
 }
 
 float calculatingN(int x, int y, float m) {
